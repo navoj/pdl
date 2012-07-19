@@ -1,5 +1,6 @@
-use Test::More tests => 53;
+use Test::More tests => 54;
 use PDL::LiteF;
+use PDL::Config;
 kill INT,$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
 
 sub tapprox {
@@ -177,3 +178,15 @@ $USHORT_MAX = 65535;
 
 ok byte($BYTE_MAX)%1 == 0, 'big byte modulus';
 ok ushort($USHORT_MAX)%1 == 0, 'big ushort modulus';
+
+SKIP: {
+skip 'No BADVAL', 1 if !$PDL::Config{WITH_BADVAL};
+# Check badflag propagation with .= (Ops::assgn) sf.net bug 3543056
+$a = sequence(10);
+$b = sequence(5);
+$b->inplace->setvaltobad(3);
+$a->slice('0:4') .= $b;
+$a->badflag(1);
+$a->check_badflag();
+ok($a->badflag == 1 && $a->nbad == 1, 'badflag propagation with .=');
+}
