@@ -30,6 +30,34 @@
 
 #define SET_RETVAL_NV(x) x->datatype<PDL_F ? (RETVAL=newSViv( (IV)result )) : (RETVAL=newSVnv( result ))
 
+#define SET_RETVAL_ANYVAL(result) do { switch (result.type) { \
+                                          case PDL_B: \
+                                             RETVAL=newSViv( (IV)result.value.B ); \
+                                             break; \
+                                          case PDL_S: \
+                                             RETVAL=newSViv( (IV)result.value.S ); \
+                                             break; \
+                                          case PDL_US: \
+                                             RETVAL=newSViv( (IV)result.value.U ); \
+                                             break; \
+                                          case PDL_L: \
+                                             RETVAL=newSViv( (IV)result.value.L ); \
+                                             break; \
+                                          case PDL_IND: \
+                                             RETVAL=newSViv( (IV)result.value.N ); \
+                                             break; \
+                                          case PDL_LL: \
+                                             RETVAL=newSViv( (IV)result.value.Q ); \
+                                             break; \
+                                          case PDL_F: \
+                                             RETVAL=newSVnv( result.value.F ); \
+                                             break; \
+                                          case PDL_D: \
+                                             RETVAL=newSVnv( result.value.D ); \
+                                             break; \
+                                          } \
+                                          } while (0)
+
 #define ANYVAL_IS_EQ(x,y) ( (x.type == y.type) && memcmp((unsigned char *)&(x.value.raw[0]),(unsigned char *)&(y.value.raw[0]),8) )
 
 Core PDL; /* Struct holding pointers to shared C routines */
@@ -633,7 +661,8 @@ sclr_c(it)
         /* result = pdl_get_offs(PDL_REPRP(it),offs); */
         result=pdl_at(PDL_REPRP(it), it->datatype, &nullp, &dummyd,
         &dummyi, PDL_REPROFFS(it),1);
-        SET_RETVAL_NV(it) ;
+        /* SET_RETVAL_NV(it) ; */
+        SET_RETVAL_ANYVAL(result) ;
 
     OUTPUT:
         RETVAL
@@ -669,7 +698,8 @@ at_c(x,position)
         (PDL_VAFFOK(x) ? x->vafftrans->incs : x->dimincs), PDL_REPROFFS(x),
 	x->ndims);
 
-    SET_RETVAL_NV(x) ;
+    /* SET_RETVAL_NV(x) ; */
+    SET_RETVAL_ANYVAL(result) ;
 
     OUTPUT:
      RETVAL
@@ -724,7 +754,8 @@ at_bad_c(x,position)
 #  endif
 #endif
 
-    SET_RETVAL_NV(x) ;
+    /* SET_RETVAL_NV(x) ; */
+    SET_RETVAL_ANYVAL(result) ;
 
     OUTPUT:
      RETVAL
