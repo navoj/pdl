@@ -815,6 +815,7 @@ sub generate_badval_init {
   for my $type (PDL::Types::types()) {
     my $typename = $type->ctype;
     $typename =~ s/^PDL_//;
+    next if $typename eq 'Anyval';  # only have atomic types in switch
     my $bval = $type->defbval;
     if ($PDL::Config{BADVAL_USENAN} && $type->usenan) {
       # note: no defaults if usenan
