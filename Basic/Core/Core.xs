@@ -30,6 +30,8 @@
 
 #define SET_RETVAL_NV(x) x->datatype<PDL_F ? (RETVAL=newSViv( (IV)result )) : (RETVAL=newSVnv( result ))
 
+#define ANYVAL_IS_EQ(x,y) ( (x.type == y.type) && memcmp((unsigned char *)&(x.value.raw[0]),(unsigned char *)&(y.value.raw[0]),8) )
+
 Core PDL; /* Struct holding pointers to shared C routines */
 
 #ifdef FOO
@@ -715,7 +717,7 @@ at_bad_c(x,position)
    } else
 #  else
    if ( badflag &&
-        ( pdl_get_badvalue( x->datatype ) == result )
+   ANYVAL_IS_EQ( pdl_get_badvalue( x->datatype ), result )
       ) {
 	 RETVAL = newSVpvn( "BAD", 3 );
    } else
@@ -814,7 +816,7 @@ listref_c(x)
 	( (x->datatype < 4 && pdl_val == pdl_badval) ||
 			(x->datatype >= 4 && finite(pdl_val) == 0) )
 #  else
-        pdl_val == pdl_badval
+        ANYVAL_IS_EQ(pdl_val,pdl_badval)
 #  endif
       ) {
 	 sv = newSVpvn( "BAD", 3 );
