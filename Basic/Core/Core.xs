@@ -662,7 +662,7 @@ sclr_c(it)
         result=pdl_at(PDL_REPRP(it), it->datatype, &nullp, &dummyd,
         &dummyi, PDL_REPROFFS(it),1);
         /* SET_RETVAL_NV(it) ; */
-        SET_RETVAL_ANYVAL(result) ;
+        SET_SV_ANYVAL(RETVAL,result) ;
 
     OUTPUT:
         RETVAL
@@ -699,7 +699,7 @@ at_c(x,position)
 	x->ndims);
 
     /* SET_RETVAL_NV(x) ; */
-    SET_RETVAL_ANYVAL(result) ;
+    SET_SVL_ANYVAL(RETVAL,result) ;
 
     OUTPUT:
      RETVAL
@@ -755,7 +755,7 @@ at_bad_c(x,position)
 #endif
 
     /* SET_RETVAL_NV(x) ; */
-    SET_RETVAL_ANYVAL(result) ;
+    SET_SV_ANYVAL(RETVAL,result) ;
 
     OUTPUT:
      RETVAL
