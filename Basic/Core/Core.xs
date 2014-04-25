@@ -28,32 +28,32 @@
 
 #define setflag(reg,flagval,val) (val?(reg |= flagval):(reg &= ~flagval))
 
-#define SET_RETVAL_NV(x) x->datatype<PDL_F ? (RETVAL=newSViv( (IV)result )) : (RETVAL=newSVnv( result ))
+/* #define SET_RETVAL_NV(x) x->datatype<PDL_F ? (RETVAL=newSViv( (IV)result )) : (RETVAL=newSVnv( result )) */
 
-#define SET_RETVAL_ANYVAL(result) do { switch (result.type) { \
+#define SET_SV_ANYVAL(svANY,result) do { switch (result.type) { \
                                           case PDL_B: \
-                                             RETVAL=newSViv( (IV)result.value.B ); \
+                                             svANY=newSViv( (IV)result.value.B ); \
                                              break; \
                                           case PDL_S: \
-                                             RETVAL=newSViv( (IV)result.value.S ); \
+                                             svANY=newSViv( (IV)result.value.S ); \
                                              break; \
                                           case PDL_US: \
-                                             RETVAL=newSViv( (IV)result.value.U ); \
+                                             svANY=newSViv( (IV)result.value.U ); \
                                              break; \
                                           case PDL_L: \
-                                             RETVAL=newSViv( (IV)result.value.L ); \
+                                             svANY=newSViv( (IV)result.value.L ); \
                                              break; \
                                           case PDL_IND: \
-                                             RETVAL=newSViv( (IV)result.value.N ); \
+                                             svANY=newSViv( (IV)result.value.N ); \
                                              break; \
                                           case PDL_LL: \
-                                             RETVAL=newSViv( (IV)result.value.Q ); \
+                                             svANY=newSViv( (IV)result.value.Q ); \
                                              break; \
                                           case PDL_F: \
-                                             RETVAL=newSVnv( result.value.F ); \
+                                             svANY=newSVnv( result.value.F ); \
                                              break; \
                                           case PDL_D: \
-                                             RETVAL=newSVnv( result.value.D ); \
+                                             svANY=newSVnv( result.value.D ); \
                                              break; \
                                           } \
                                           } while (0)
@@ -771,6 +771,7 @@ list_c(x)
 	void *data;
 	int ind;
 	int stop = 0;
+        SV *sv;
 	PPCODE:
       pdl_make_physvaffine( x );
 	inds = pdl_malloc(sizeof(PDL_Indx) * x->ndims); /* GCC -> on stack :( */
@@ -781,8 +782,10 @@ list_c(x)
 	EXTEND(sp,x->nvals);
 	for(ind=0; ind < x->ndims; ind++) inds[ind] = 0;
 	while(!stop) {
-		PUSHs(sv_2mortal(newSVnv(pdl_at( data, x->datatype,
-			inds, x->dims, incs, offs, x->ndims))));
+                PDL_Anyval pdl_val = { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+		pdl_val = pdl_at( data, x->datatype, inds, x->dims, incs, offs, x->ndims);
+                SET_SV_ANYVAL(sv,pdl_val);
+		PUSHs(sv_2mortal(sv));
 		stop = 1;
 		for(ind = 0; ind < x->ndims; ind++)
 			if(++(inds[ind]) >= x->dims[ind])
@@ -806,6 +809,7 @@ listref_c(x)
    int lind;
    int stop = 0;
    AV *av;
+   SV *sv;
   CODE:
 #if BADVAL
     /*
@@ -814,7 +818,7 @@ listref_c(x)
     #  returns
     */
 
-   SV *sv;
+   /* SV *sv; */
    PDL_Anyval pdl_val = { 0, 0, 0, 0, 0, 0, 0, 0, 0, }, pdl_badval = { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
    int badflag = (x->state & PDL_BADVAL) > 0;
 #  if BADVAL_USENAN
@@ -852,14 +856,13 @@ listref_c(x)
       ) {
 	 sv = newSVpvn( "BAD", 3 );
       } else {
-	 sv = newSVnv( pdl_val );
+	 SET_SV_ANYVAL(sv,pdl_val);
       }
       av_store( av, lind, sv );
 #else
-      av_store(av,lind,
-               newSVnv( pdl_at( data, x->datatype,
-	       inds, x->dims, incs, offs, x->ndims ) )
-               );
+        pdl_val = pdl_at( data, x->datatype, inds, x->dims, incs, offs, x->ndims );
+	SET_SV_ANYVAL(sv,pdl_val);
+      av_store(av, lind, sv));
 #endif
 
       lind++;
@@ -1347,6 +1350,7 @@ void
 threadover_n(...)
    PREINIT:
    int npdls;
+   SV *sv;
    CODE:
    {
     npdls = items - 1;
@@ -1374,8 +1378,10 @@ threadover_n(...)
 		EXTEND(sp,items);
 		PUSHs(sv_2mortal(newSViv((sd-1))));
 		for(i=0; i<npdls; i++) {
-			PUSHs(sv_2mortal(newSVnv(
-				pdl_get_offs(pdls[i],pdl_thr.offs[i]))));
+                   PDL_Anyval pdl_val = { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+		   pdl_val = pdl_get_offs(pdls[i],pdl_thr.offs[i]);
+                   SET_SV_ANYVAL(sv,pdl_val);
+                   PUSHs(sv_2mortal(sv));
 		}
 	    	PUTBACK;
 		perl_call_sv(code,G_DISCARD);
