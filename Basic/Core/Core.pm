@@ -53,6 +53,10 @@ $PDL::toolongtoprint = 10000;  # maximum pdl size to stringify for printing
 *at		= \&PDL::at;	  *flows	= \&PDL::flows;
 *sclr           = \&PDL::sclr;    *shape        = \&PDL::shape;
 
+# TODO: Need to fix datatype constructors to pass the desired type
+#       *into* the alltopdl part so that the pdl is *created* with
+#       the required type from the start.
+#
 for (map {
   [ PDL::Types::typefld($_,'convertfunc'), PDL::Types::typefld($_,'numval') ]
 } PDL::Types::typesrtkeys()) {
@@ -2709,7 +2713,7 @@ sub PDL::convert {
   barf 'Usage: $y = convert($x, $newtypenum)'."\n" unless Scalar::Util::looks_like_number($type);
   return $pdl if $pdl->get_datatype == $type;
   # make_physical-call: temporary stopgap to work around core bug
-  my $conv = $pdl->flowconvert($type)->make_physical->sever;
+  my $conv = $pdl->flowconvert($type)->make_physical->sever;  # flowconvert pp_def'd in slices.pd
   return $conv;
 }
 
