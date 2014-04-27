@@ -58,6 +58,43 @@ print OUT <<'!HEADER!';
  * So many ways to be undefined...
  */
 #define sv_undef(sv)  ( (!(sv) || ((sv)==&PL_sv_undef)) || !(SvNIOK(sv) || (SvTYPE(sv)==SVt_PVMG) || SvPOK(sv) || SvROK(sv)))
+
+#define SET_ANYVAL_SV(myany,svval,type) do { switch (type) { \
+                                          case PDL_B: \
+                                             myany.type = type; \
+                                             myany.value.B = (PDL_Byte) SvIV(svval); \
+                                             break; \
+                                          case PDL_S: \
+                                             myany.type = type; \
+                                             myany.value.S = (PDL_Short) SvIV(svval); \
+                                             break; \
+                                          case PDL_US: \
+                                             myany.type = type; \
+                                             myany.value.U = (PDL_Ushort) SvIV(svval); \
+                                             break; \
+                                          case PDL_L: \
+                                             myany.type = type; \
+                                             myany.value.L = (PDL_Long) SvIV(svval); \
+                                             break; \
+                                          case PDL_IND: \
+                                             myany.type = type; \
+                                             myany.value.N = (PDL_Indx) SvIV(svval); \
+                                             break; \
+                                          case PDL_LL: \
+                                             myany.type = type; \
+                                             myany.value.Q = (PDL_LongLong) SvIV(svval); \
+                                             break; \
+                                          case PDL_F: \
+                                             myany.type = type; \
+                                             myany.value.F = (PDL_Float) SvNV(svval); \
+                                             break; \
+                                          case PDL_D: \
+                                             myany.type = type; \
+                                             myany.value.D = (PDL_Double) SvNV(svval); \
+                                             break; \
+                                          } \
+                                          } while (0)
+
 !HEADER!
 
 
@@ -816,7 +853,8 @@ pdl* pdl_from_array(AV* av, AV* dims, int type, pdl* p)
     SV *sv = get_sv("PDL::undefval",0);
     if ( (!!sv) && SvOK(sv) ) {
        /* Need to set undefvalue from the perl scalar */
-       undefval = (PDL_Anyval)SvNV(sv);
+       SET_ANYVAL_SV(undefval, sv, type);
+       /* undefval = (PDL_Anyval)SvNV(sv); */
     }
   }
 
@@ -829,11 +867,12 @@ pdl* pdl_from_array(AV* av, AV* dims, int type, pdl* p)
 #
   for my $type(sort keys %PDL_DATATYPES){
     my $t2 = $PDL_DATATYPES{$type};
+    my $t2sym = $t2;
     $t2 =~ s/PDL_//;
     next if $t2 eq 'Anyval';
     print OUT <<"!WITH!SUBS!";
   case $type:
-    pdl_setav_$t2(p->data,av,pdims,ndims,level, undefval);
+    pdl_setav_$t2(p->data,av,pdims,ndims,level, undefval.value.$PDL::Types::typehash{$type}->{ppsym});
     break;
 
 !WITH!SUBS!
@@ -891,6 +930,8 @@ pdl* pdl_from_array(AV* av, AV* dims, int type, pdl* p)
 
 for my $in ( keys %PDL_DATATYPES ) {
 
+   next if $in eq 'PDL_A';  # PDL_Anyval is not an atomic type
+
   (my $type = $PDL_DATATYPES{$in}) =~ s/^PDL_//;
 
 print OUT <<"!WITH!SUBS!";
@@ -904,7 +945,7 @@ PDL_Indx pdl_kludge_copy_$type(PDL_Indx poff, // Offset into the dest data array
                            pdl* pdl,          // pointer to the source pdl
                            int plevel,        // level within the source pdl
                            void* pptr,        // Data pointer in the source pdl
-                           PDL_Anyval undefval    // undefval for the dest pdl
+                           PDL_$type undefval // undefval for the dest pdl
                            ) {
   PDL_Indx i;
   PDL_Indx undef_count = 0;
@@ -944,6 +985,8 @@ PDL_Indx pdl_kludge_copy_$type(PDL_Indx poff, // Offset into the dest data array
         foreach my $switch_type (keys %PDL::Types::typehash) {
 
         my $ctype = $PDL::Types::typehash{$switch_type}{ctype};
+
+        next if $ctype eq 'PDL_Anyval';
 
         print OUT <<"!WITH!SUBS!";
 
@@ -1045,7 +1088,7 @@ PDL_Indx pdl_kludge_copy_$type(PDL_Indx poff, // Offset into the dest data array
  */
 
 PDL_Indx pdl_setav_$type(PDL_$type* pdata, AV* av,
-                     PDL_Indx* pdims, int ndims, int level, PDL_Anyval undefval)
+                     PDL_Indx* pdims, int ndims, int level, PDL_$type undefval)
 {
   PDL_Indx cursz = pdims[ndims-1-level]; /* we go from the highest dim inward */
   PDL_Indx len = av_len(av);
