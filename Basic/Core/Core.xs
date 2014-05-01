@@ -739,8 +739,8 @@ at_bad_c(x,position)
 #  if BADVAL_USENAN
    /* do we have to bother about NaN's? */
    if ( badflag &&
-        ( ( x->datatype < 4 && ( result == pdl_get_badvalue( x->datatype ) ) ) ||
-          ( x->datatype >= 4 && ( finite(result.D) == 0 ) )
+        ( ( x->datatype < 4 && ANYVAL_IS_EQ(result, pdl_get_badvalue( x->datatype )) ) ||
+          ( x->datatype >= 4 && ( finite(result.value.D) == 0 ) )
         )
       ) {
 	 RETVAL = newSVpvn( "BAD", 3 );
@@ -810,6 +810,8 @@ listref_c(x)
    int stop = 0;
    AV *av;
    SV *sv;
+   PDL_Anyval pdl_val =    { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+   PDL_Anyval pdl_badval = { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
   CODE:
 #if BADVAL
     /*
@@ -819,7 +821,6 @@ listref_c(x)
     */
 
    /* SV *sv; */
-   PDL_Anyval pdl_val = { 0, 0, 0, 0, 0, 0, 0, 0, 0, }, pdl_badval = { 0, 0, 0, 0, 0, 0, 0, 0, 0, };
    int badflag = (x->state & PDL_BADVAL) > 0;
 #  if BADVAL_USENAN
     /* do we have to bother about NaN's? */
@@ -848,8 +849,9 @@ listref_c(x)
       if ( badflag && 
 #  if BADVAL_USENAN
 	/* NOTE: dangerous use of hardwired datatype value 4! */
-	( (x->datatype < 4 && pdl_val == pdl_badval) ||
-			(x->datatype >= 4 && finite(pdl_val) == 0) )
+        /* NEED TO FIX FOR PDL_Anyval support!!!!!!!!!! */
+	( (x->datatype < 4 && ANYVAL_IS_EQ(pdl_val, pdl_badval)) ||
+			(x->datatype >= 4 && finite(pdl_val.value.D) == 0) )
 #  else
         ANYVAL_IS_EQ(pdl_val,pdl_badval)
 #  endif
@@ -862,7 +864,7 @@ listref_c(x)
 #else
         pdl_val = pdl_at( data, x->datatype, inds, x->dims, incs, offs, x->ndims );
 	SET_SV_ANYVAL(sv,pdl_val);
-      av_store(av, lind, sv));
+      av_store(av, lind, sv);
 #endif
 
       lind++;
