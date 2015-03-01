@@ -53,6 +53,7 @@ before_install:
   - perl -V
   - cpanm --quiet --notest ExtUtils::F77 Term::ReadLine::Gnu PGPLOT # do not need tests
   - cpanm --quiet --notest Devel::CheckLib # specify this now because this is a CONFIGURE_REQUIRES for author-side
+  - cpanm --verbose Alien::HDF4
   - cpanm --force --verbose ExtUtils::ParseXS # we install the latest ExtUtils::ParseXS
   - if [ "$EUMM_BLEAD" == 1 ]; then cpanm --quiet --notest --dev ExtUtils::MakeMaker; fi
   - build-dist
