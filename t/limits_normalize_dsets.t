@@ -43,8 +43,8 @@ my %errs = ( en => undef, ep => undef );
 my %attr = ( KeyCroak => 1 );
 
 my @rdsets = (
-	    { MinMax => [ [ '', ''],
-			  [ '', '']
+	    { MinMax => [ [ undef, undef],
+			  [ undef, undef]
 			],
 	      Vectors => [ { data => $x1 },
 			 {
@@ -52,8 +52,8 @@ my @rdsets = (
 			 ]
 	    },
 
-	    { MinMax => [ [ '', ''],
-			  [ '', '']
+	    { MinMax => [ [ undef, undef],
+			  [ undef, undef]
 			],
 	      Vectors => [ { data => $x2 },
 			 {
@@ -283,9 +283,15 @@ sub __deep_check {
     my $eq;
     {
         # Quiet uninitialized value warnings when comparing undefs.
-        no warnings;
+        #no warnings;
 
-        if( $e1 eq $e2 ) {
+	if( !defined $e1 || !defined $e2 ) {
+		if( !defined $e1 && !defined $e2 ) {
+			$ok = 1;
+		} else {
+			$ok = 0;
+		}
+	} elsif( $e1 eq $e2 ) {
             $ok = 1;
         }
         else {
