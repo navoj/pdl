@@ -1,6 +1,7 @@
 use PDL;
 
 use Test::More tests => 21;
+use Test::Exception;
 
 my $got = 0;
 eval{require PDL::Slatec;};
@@ -27,7 +28,7 @@ BEGIN {
   $^W=0;
 }
 
-# so can use _eq_array w/ piddles. 
+# so can use _eq_array w/ piddles.
 {
   package PDL;
   use overload 'eq' => \&PDL::eq,
@@ -51,27 +52,27 @@ my %errs = ( en => undef, ep => undef );
 my %attr = ( KeyCroak => 1 );
 
 my @rdsets = (
-	    { MinMax => [ [ '', ''], 
-			  [ '', ''] 
+	    { MinMax => [ [ '', ''],
+			  [ '', '']
 			],
 	      Vectors => [ { data => $x1 },
 			 {
-			  data => $y1 } 
+			  data => $y1 }
 			 ]
 	    },
 
-	    { MinMax => [ [ '', ''], 
-			  [ '', ''] 
+	    { MinMax => [ [ '', ''],
+			  [ '', '']
 			],
 	      Vectors => [ { data => $x2 },
 			 {
-			  data => $y2 } 
+			  data => $y2 }
 			 ]
 	    },
 	  );
 
 
-my @udsets = ( [ $x1, $y1 ], 
+my @udsets = ( [ $x1, $y1 ],
 	    [ $x2, $y2 ] );
 my @dsets = normalize_dsets( { %attr }, @udsets );
 
@@ -94,19 +95,19 @@ ok( _eq_array( \@dsets, \@rdsets ), "array" );
 
 my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 
-@udsets = ( [ { x => $x1, y => $y1 }, 
+@udsets = ( [ { x => $x1, y => $y1 },
 	      { x => $x2, y => $y2 } ] );
 @dsets = normalize_dsets( $args, @udsets );
 ok( _eq_array( \@dsets, \@rdsets ), "hash" );
 
 
-@udsets = ( [ { x => $x1, y => $y1 }, 
+@udsets = ( [ { x => $x1, y => $y1 },
 	      { x => $x2, y => $y2, z => 0 } ] );
 @dsets = normalize_dsets( $args, @udsets );
 ok( _eq_array( \@dsets, \@rdsets ), "hash, extra data" );
 
 
-@udsets = (  [ $x1, $y1 ], 
+@udsets = (  [ $x1, $y1 ],
 	     [ { x => $x2, y => $y2 } ] );
 @dsets = normalize_dsets( $args, @udsets );
 ok( _eq_array( \@dsets, \@rdsets ), "array and hash" );
@@ -114,24 +115,23 @@ ok( _eq_array( \@dsets, \@rdsets ), "array and hash" );
 #############################################################
 
 @udsets = (  $x1, $y1, [ { x => $x2, y => $y2 } ] );
-eval { 
+throws_ok {
   @dsets = normalize_dsets( $args,, @udsets );
-};
-ok( $@ =~ /same dimensionality/, "dimensions not equal" );
+} qr/same dimensionality/, "dimensions not equal";
 
 @udsets = (  [ $x1, $y1 ], [ $x1, { x => $x2, y => $y2 } ] );
-eval {@dsets = normalize_dsets( $args, @udsets ); };
-ok( $@ =~ /unexpected data type/, "bad arg mix" );
+throws_ok {
+	@dsets = normalize_dsets( $args, @udsets )
+} qr/unexpected data type/, "bad arg mix";
 
 @udsets = ( [ $x1, $y1 ], [ { x => $x2, y => $y2 } ] );
-eval { 
+lives_ok {
   @dsets = normalize_dsets( $args, @udsets );
-};
-ok( !$@, "array hash combo" );
+} "array hash combo";
 
 #############################################################
 
-@udsets = (  [ $x1, $y1 ] ); 
+@udsets = (  [ $x1, $y1 ] );
 @dsets = normalize_dsets( { %attr, Trans => [ \&log ] }, @udsets );
 
 ok( _eq_array( $dsets[0]{Vectors}, [
@@ -140,7 +140,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "array: global x trans" );
 
-@udsets = (  [ [ $x1, \&log ], $y1 ] ); 
+@udsets = (  [ [ $x1, \&log ], $y1 ] );
 @dsets = normalize_dsets( { %attr }, @udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -148,7 +148,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "array: local x trans" );
 
-@udsets = (  [ [ $x1, \&log ], $y1 ] ); 
+@udsets = (  [ [ $x1, \&log ], $y1 ] );
 @dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -156,7 +156,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "array: local override x trans" );
 
-@udsets = (  [ [ $x1, undef, undef, undef ], $y1 ] ); 
+@udsets = (  [ [ $x1, undef, undef, undef ], $y1 ] );
 @dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1 },
@@ -168,7 +168,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 
 my $keys = [ qw( x y ) ];
 my %keys = ( KeySpec => parse_vecspecs( $keys ) );
-my $udsets = [  { x => $x1, y => $y1 } ]; 
+my $udsets = [  { x => $x1, y => $y1 } ];
 @dsets = normalize_dsets( { %attr, %keys, Trans => [ \&log ] }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -177,7 +177,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 	    ), "hash: global x trans" );
 
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => ( '&trans' ) ]; 
+$udsets = [ { x => $x1, trans => \&log , y => $y1 } => ( '&trans' ) ];
 @dsets = normalize_dsets( { %attr, %keys }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -186,7 +186,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 	    ), "hash: local x trans 1" );
 
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ]; 
+$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
 @dsets = normalize_dsets( { %attr, KeySpec => [] }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -194,7 +194,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "hash: local x trans 2" );
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ]; 
+$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
 @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1, trans => \&log },
@@ -202,7 +202,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "hash: local override x trans" );
 
-$udsets = [ { x => $x1, trans => undef , y => $y1 } => qw( x&trans y ) ]; 
+$udsets = [ { x => $x1, trans => undef , y => $y1 } => qw( x&trans y ) ];
 @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1 },
@@ -210,7 +210,7 @@ ok( _eq_array( $dsets[0]{Vectors}, [
 			]
 	    ), "hash: local undef x trans 1" );
 
-$udsets = [ { x => $x1, y => $y1 } => qw( x& y ) ]; 
+$udsets = [ { x => $x1, y => $y1 } => qw( x& y ) ];
 @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
 ok( _eq_array( $dsets[0]{Vectors}, [
 		       { data => $x1 },
@@ -250,7 +250,7 @@ sub __deep_check {
     my $eq;
     {
         # Quiet uninitialized value warnings when comparing undefs.
-        no warnings; 
+        no warnings;
 
         if( $e1 eq $e2 ) {
             $ok = 1;
