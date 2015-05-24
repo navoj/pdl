@@ -3,14 +3,6 @@ use Test::More tests => 6;
 use strict;
 use warnings;
 
-sub tapprox {
-	my($a,$b,$mdiff) = @_;
-	$mdiff = 0.01 unless defined($mdiff);
-	my $c = abs($a-$b);
-	my $d = max($c);
-	$d < $mdiff;
-}
-
 sub vars_ipv {
   PDL::Dbg::vars() if $PDL::debug;
 }
@@ -31,14 +23,14 @@ vars_ipv;
 {
 	my $im = float [1,2,3,4,5];
 	my $out = bytescl($im,100);
-	ok(tapprox($im,bytescl($im,100)));
+	ok(all approx($im,$out));
 	ok($out->get_datatype == $PDL::Types::PDL_B);
 }
 
 {
 	my $im = float [1,2,3,4,5];
 	my $out = bytescl($im,-100);
-	ok(tapprox(pdl([0,25,50,75,100]),$out));
+	ok(all approx(pdl([0,25,50,75,100]),$out));
 
 	p "$out\n";
 }
@@ -46,7 +38,7 @@ vars_ipv;
 {
 	my $rgb = double [[1,1,1],[1,0.5,0.7],[0.1,0.2,0.1]];
 	my $out = rgbtogr($rgb);
-	ok(tapprox($out,pdl([1,0.67,0.16])));
+	ok(all approx($out,pdl([1,0.67,0.16]), 0.01));
 	ok($out->get_datatype == $PDL::Types::PDL_D);
 
 	vars_ipv;
@@ -72,5 +64,5 @@ vars_ipv;
 	my $out = interlrgb($im,$lut);
 	vars_ipv;
 	p $out;
-	ok(tapprox($out,$interl));
+	ok(all approx($out,$interl));
 }
