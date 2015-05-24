@@ -8,11 +8,8 @@ use warnings;
 kill 'INT',$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
 
 sub tapprox {
-       my($pa,$pb,$mdiff) = @_;
-       $mdiff = 0.01 unless defined($mdiff);
-       my $pc = abs($pa-$pb);
-       my $pd = max($pc);
-       $pd < $mdiff;
+	my($pa,$pb,$mdiff) = @_;
+	all approx($pa, $pb,$mdiff || 0.01);
 }
 
 plan skip_all => 'No threads' if !PDL::Core::pthreads_enabled;
