@@ -23,13 +23,6 @@ unless($got) {
 *normalize_dsets = \&PDL::Graphics::Limits::normalize_dsets;
 *parse_vecspecs = \&PDL::Graphics::Limits::parse_vecspecs;
 
-# so can use _eq_array w/ piddles.
-{
-  package PDL;
-  use overload 'eq' => \&PDL::eq,
-    'bool' => sub { $_[0]->and } ;
-}
-
 my $x1 = pdl( 1, 2 );
 my $y1 = pdl( 1, 2 );
 
@@ -83,7 +76,7 @@ my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 	    print "  @d2\n";
 	    }
 
-	ok( _eq_array( \@dsets, \@rdsets ), "array" );
+	is_deeply( \@dsets, \@rdsets, "array" );
 }
 
 
@@ -91,7 +84,7 @@ my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 	my @udsets = ( [ { x => $x1, y => $y1 },
 		      { x => $x2, y => $y2 } ] );
 	my @dsets = normalize_dsets( $args, @udsets );
-	ok( _eq_array( \@dsets, \@rdsets ), "hash" );
+	is_deeply( \@dsets, \@rdsets, "hash" );
 }
 
 
@@ -99,7 +92,7 @@ my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 	my @udsets = ( [ { x => $x1, y => $y1 },
 		      { x => $x2, y => $y2, z => 0 } ] );
 	my @dsets = normalize_dsets( $args, @udsets );
-	ok( _eq_array( \@dsets, \@rdsets ), "hash, extra data" );
+	is_deeply( \@dsets, \@rdsets, "hash, extra data" );
 }
 
 
@@ -107,7 +100,7 @@ my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 	my @udsets = (  [ $x1, $y1 ],
 		     [ { x => $x2, y => $y2 } ] );
 	my @dsets = normalize_dsets( $args, @udsets );
-	ok( _eq_array( \@dsets, \@rdsets ), "array and hash" );
+	is_deeply( \@dsets, \@rdsets, "array and hash" );
 }
 
 #############################################################
@@ -274,105 +267,4 @@ my %keys = ( KeySpec => parse_vecspecs( $keys ) );
 }
 
 ############################################
-
-sub __deep_check {
-    my($e1, $e2) = @_;
-    my @Data_Stack;
-    my $ok = 0;
-
-    my $eq;
-    {
-        # Quiet uninitialized value warnings when comparing undefs.
-        #no warnings;
-
-	if( !defined $e1 || !defined $e2 ) {
-		if( !defined $e1 && !defined $e2 ) {
-			$ok = 1;
-		} else {
-			$ok = 0;
-		}
-	} elsif( $e1 eq $e2 ) {
-            $ok = 1;
-        }
-        else {
-            if( UNIVERSAL::isa($e1, 'ARRAY') and
-                UNIVERSAL::isa($e2, 'ARRAY') )
-            {
-                $ok = _eq_array($e1, $e2);
-            }
-            elsif( UNIVERSAL::isa($e1, 'HASH') and
-                   UNIVERSAL::isa($e2, 'HASH') )
-            {
-                $ok = _eq_hash($e1, $e2);
-            }
-            elsif( UNIVERSAL::isa($e1, 'REF') and
-                   UNIVERSAL::isa($e2, 'REF') )
-            {
-                push @Data_Stack, { type => 'REF', vals => [$e1, $e2] };
-                $ok = __deep_check($$e1, $$e2);
-                pop @Data_Stack if $ok;
-            }
-            elsif( UNIVERSAL::isa($e1, 'SCALAR') and
-                   UNIVERSAL::isa($e2, 'SCALAR') )
-            {
-                push @Data_Stack, { type => 'REF', vals => [$e1, $e2] };
-                $ok = __deep_check($$e1, $$e2);
-            }
-            else {
-                push @Data_Stack, { vals => [$e1, $e2] };
-                $ok = 0;
-            }
-        }
-    }
-
-    return $ok;
-}
-
-############################################
-
-sub _eq_array  {
-    my($a1, $a2) = @_;
-    return 1 if $a1 eq $a2;
-    my @Data_Stack;
-
-    my $DNE;
-    my $ok = 1;
-    my $max = $#$a1 > $#$a2 ? $#$a1 : $#$a2;
-    for (0..$max) {
-        my $e1 = $_ > $#$a1 ? $DNE : $a1->[$_];
-        my $e2 = $_ > $#$a2 ? $DNE : $a2->[$_];
-
-        push @Data_Stack, { type => 'ARRAY', idx => $_, vals => [$e1, $e2] };
-        $ok = __deep_check($e1,$e2);
-        pop @Data_Stack if $ok;
-
-        last unless $ok;
-    }
-    return $ok;
-}
-
-#############################################
-
-sub _eq_hash {
-    my($a1, $a2) = @_;
-    return 1 if $a1 eq $a2;
-    my @Data_Stack;
-
-    my $DNE;
-    my $ok = 1;
-    my $bigger = keys %$a1 > keys %$a2 ? $a1 : $a2;
-    foreach my $k (keys %$bigger) {
-        my $e1 = exists $a1->{$k} ? $a1->{$k} : $DNE;
-        my $e2 = exists $a2->{$k} ? $a2->{$k} : $DNE;
-
-        push @Data_Stack, { type => 'HASH', idx => $k, vals => [$e1, $e2] };
-        $ok = __deep_check($e1, $e2);
-        pop @Data_Stack if $ok;
-
-        last unless $ok;
-    }
-
-    return $ok;
-}
-
 
