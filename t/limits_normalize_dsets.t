@@ -3,6 +3,9 @@ use PDL;
 use Test::More tests => 21;
 use Test::Exception;
 
+use strict;
+use warnings;
+
 my $got = 0;
 eval{require PDL::Slatec;};
 if(!$@) {$got = 1}
@@ -20,23 +23,11 @@ unless($got) {
 *normalize_dsets = \&PDL::Graphics::Limits::normalize_dsets;
 *parse_vecspecs = \&PDL::Graphics::Limits::parse_vecspecs;
 
-# temporarily disable warnings to turn off Perl's
-# redefinition warning
-my $oldw;
-BEGIN {
-  $oldw = $^W;
-  $^W=0;
-}
-
 # so can use _eq_array w/ piddles.
 {
   package PDL;
   use overload 'eq' => \&PDL::eq,
     'bool' => sub { $_[0]->and } ;
-}
-
-BEGIN {
-  $^W=$oldw;
 }
 
 my $x1 = pdl( 1, 2 );
@@ -71,180 +62,222 @@ my @rdsets = (
 	    },
 	  );
 
-
-my @udsets = ( [ $x1, $y1 ],
-	    [ $x2, $y2 ] );
-my @dsets = normalize_dsets( { %attr }, @udsets );
-
-
-my %d1 = %{$dsets[0]};
-for (keys(%d1)) {
-    print "1: $_: $d1{$_}\n";
-    my @d1 = @{$d1{$_}};
-    print "  @d1\n";
-    }
-my %d2 = %{$dsets[1]};
-for (keys(%d2)) {
-    print "2: $_: $d2{$_}\n";
-    my @d2 = @{$d2{$_}};
-    print "  @d2\n";
-    }
-
-ok( _eq_array( \@dsets, \@rdsets ), "array" );
-
-
 my $args = { %attr, KeySpec => [ { data => 'x' }, { data => 'y' }, ] };
 
-@udsets = ( [ { x => $x1, y => $y1 },
-	      { x => $x2, y => $y2 } ] );
-@dsets = normalize_dsets( $args, @udsets );
-ok( _eq_array( \@dsets, \@rdsets ), "hash" );
+{
+	my @udsets = ( [ $x1, $y1 ],
+		    [ $x2, $y2 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
 
 
-@udsets = ( [ { x => $x1, y => $y1 },
-	      { x => $x2, y => $y2, z => 0 } ] );
-@dsets = normalize_dsets( $args, @udsets );
-ok( _eq_array( \@dsets, \@rdsets ), "hash, extra data" );
+	my %d1 = %{$dsets[0]};
+	for (keys(%d1)) {
+	    print "1: $_: $d1{$_}\n";
+	    my @d1 = @{$d1{$_}};
+	    print "  @d1\n";
+	    }
+	my %d2 = %{$dsets[1]};
+	for (keys(%d2)) {
+	    print "2: $_: $d2{$_}\n";
+	    my @d2 = @{$d2{$_}};
+	    print "  @d2\n";
+	    }
+
+	ok( _eq_array( \@dsets, \@rdsets ), "array" );
+}
 
 
-@udsets = (  [ $x1, $y1 ],
-	     [ { x => $x2, y => $y2 } ] );
-@dsets = normalize_dsets( $args, @udsets );
-ok( _eq_array( \@dsets, \@rdsets ), "array and hash" );
+{
+	my @udsets = ( [ { x => $x1, y => $y1 },
+		      { x => $x2, y => $y2 } ] );
+	my @dsets = normalize_dsets( $args, @udsets );
+	ok( _eq_array( \@dsets, \@rdsets ), "hash" );
+}
+
+
+{
+	my @udsets = ( [ { x => $x1, y => $y1 },
+		      { x => $x2, y => $y2, z => 0 } ] );
+	my @dsets = normalize_dsets( $args, @udsets );
+	ok( _eq_array( \@dsets, \@rdsets ), "hash, extra data" );
+}
+
+
+{
+	my @udsets = (  [ $x1, $y1 ],
+		     [ { x => $x2, y => $y2 } ] );
+	my @dsets = normalize_dsets( $args, @udsets );
+	ok( _eq_array( \@dsets, \@rdsets ), "array and hash" );
+}
 
 #############################################################
 
-@udsets = (  $x1, $y1, [ { x => $x2, y => $y2 } ] );
-throws_ok {
-  @dsets = normalize_dsets( $args,, @udsets );
-} qr/same dimensionality/, "dimensions not equal";
+{
+	my @udsets = (  $x1, $y1, [ { x => $x2, y => $y2 } ] );
+	throws_ok {
+		my @dsets = normalize_dsets( $args,, @udsets );
+	} qr/same dimensionality/, "dimensions not equal";
+}
 
-@udsets = (  [ $x1, $y1 ], [ $x1, { x => $x2, y => $y2 } ] );
-throws_ok {
-	@dsets = normalize_dsets( $args, @udsets )
-} qr/unexpected data type/, "bad arg mix";
+{
+	my @udsets = (  [ $x1, $y1 ], [ $x1, { x => $x2, y => $y2 } ] );
+	throws_ok {
+		my @dsets = normalize_dsets( $args, @udsets )
+	} qr/unexpected data type/, "bad arg mix";
+}
 
-@udsets = ( [ $x1, $y1 ], [ { x => $x2, y => $y2 } ] );
-lives_ok {
-  @dsets = normalize_dsets( $args, @udsets );
-} "array hash combo";
+{
+	my @udsets = ( [ $x1, $y1 ], [ { x => $x2, y => $y2 } ] );
+	lives_ok {
+		my @dsets = normalize_dsets( $args, @udsets );
+	} "array hash combo";
+}
 
 #############################################################
 
-@udsets = (  [ $x1, $y1 ] );
-@dsets = normalize_dsets( { %attr, Trans => [ \&log ] }, @udsets );
+{
+	my @udsets = (  [ $x1, $y1 ] );
+	my @dsets = normalize_dsets( { %attr, Trans => [ \&log ] }, @udsets );
 
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "array: global x trans" );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "array: global x trans" );
+}
 
-@udsets = (  [ [ $x1, \&log ], $y1 ] );
-@dsets = normalize_dsets( { %attr }, @udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "array: local x trans" );
+{
+	my @udsets = (  [ [ $x1, \&log ], $y1 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "array: local x trans" );
+}
 
-@udsets = (  [ [ $x1, \&log ], $y1 ] );
-@dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "array: local override x trans" );
+{
+	my @udsets = (  [ [ $x1, \&log ], $y1 ] );
+	my @dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "array: local override x trans" );
+}
 
-@udsets = (  [ [ $x1, undef, undef, undef ], $y1 ] );
-@dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1 },
-		       { data => $y1 },
-			]
-	    ), "array: local undef x trans" );
+{
+	my @udsets = (  [ [ $x1, undef, undef, undef ], $y1 ] );
+	my @dsets = normalize_dsets( { %attr, Trans => [ \&sin ]}, @udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1 },
+			       { data => $y1 },
+				]
+		    ), "array: local undef x trans" );
+}
 
 #############################################################
 
 my $keys = [ qw( x y ) ];
 my %keys = ( KeySpec => parse_vecspecs( $keys ) );
-my $udsets = [  { x => $x1, y => $y1 } ];
-@dsets = normalize_dsets( { %attr, %keys, Trans => [ \&log ] }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "hash: global x trans" );
+{
+	my $udsets = [  { x => $x1, y => $y1 } ];
+	my @dsets = normalize_dsets( { %attr, %keys, Trans => [ \&log ] }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "hash: global x trans" );
+}
 
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => ( '&trans' ) ];
-@dsets = normalize_dsets( { %attr, %keys }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "hash: local x trans 1" );
+{
+	my $udsets = [ { x => $x1, trans => \&log , y => $y1 } => ( '&trans' ) ];
+	my @dsets = normalize_dsets( { %attr, %keys }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "hash: local x trans 1" );
+}
 
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
-@dsets = normalize_dsets( { %attr, KeySpec => [] }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "hash: local x trans 2" );
+{
+	my $udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
+	my @dsets = normalize_dsets( { %attr, KeySpec => [] }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "hash: local x trans 2" );
+}
 
-$udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
-@dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1, trans => \&log },
-		       { data => $y1 },
-			]
-	    ), "hash: local override x trans" );
+{
+	my $udsets = [ { x => $x1, trans => \&log , y => $y1 } => qw( x&trans y ) ];
+	my @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1, trans => \&log },
+			       { data => $y1 },
+				]
+		    ), "hash: local override x trans" );
+}
 
-$udsets = [ { x => $x1, trans => undef , y => $y1 } => qw( x&trans y ) ];
-@dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1 },
-		       { data => $y1 },
-			]
-	    ), "hash: local undef x trans 1" );
+{
+	my $udsets = [ { x => $x1, trans => undef , y => $y1 } => qw( x&trans y ) ];
+	my @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1 },
+			       { data => $y1 },
+				]
+		    ), "hash: local undef x trans 1" );
+}
 
-$udsets = [ { x => $x1, y => $y1 } => qw( x& y ) ];
-@dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
-ok( _eq_array( $dsets[0]{Vectors}, [
-		       { data => $x1 },
-		       { data => $y1 },
-			]
-	    ), "hash: local undef x trans 2" );
+{
+	my $udsets = [ { x => $x1, y => $y1 } => qw( x& y ) ];
+	my @dsets = normalize_dsets( { %attr, KeySpec => [], Trans => [\&sin] }, $udsets );
+	ok( _eq_array( $dsets[0]{Vectors}, [
+			       { data => $x1 },
+			       { data => $y1 },
+				]
+		    ), "hash: local undef x trans 2" );
+}
 
 
 #############################################################
 
-@udsets = ( [ [ $x1, $xn ], $y2 ] );
-@dsets = normalize_dsets( { %attr }, @udsets );
-my $exp = [ { data => $x1, errn => $xn, errp => $xn }, { data => $y2, } ];
-ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: symmetric errors" );
+{
+	my @udsets = ( [ [ $x1, $xn ], $y2 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
+	my $exp = [ { data => $x1, errn => $xn, errp => $xn }, { data => $y2, } ];
+	ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: symmetric errors" );
+}
 
-@udsets = ( [ [ $x1, $xn, $xp ], $y2 ] );
-@dsets = normalize_dsets( { %attr }, @udsets );
-$exp = [ { data => $x1, errn => $xn, errp => $xp }, { data => $y2, } ];
-ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 1" );
+{
+	my @udsets = ( [ [ $x1, $xn, $xp ], $y2 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
+	my $exp = [ { data => $x1, errn => $xn, errp => $xp }, { data => $y2, } ];
+	ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 1" );
+}
 
-@udsets = ( [ [ $x1, undef, $xp ], $y2 ] );
-@dsets = normalize_dsets( { %attr }, @udsets );
-$exp = [ { data => $x1, errp => $xp }, { data => $y2, } ];
-ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 2" );
+{
+	my @udsets = ( [ [ $x1, undef, $xp ], $y2 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
+	my $exp = [ { data => $x1, errp => $xp }, { data => $y2, } ];
+	ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 2" );
+}
 
-@udsets = ( [ [ $x1, $xn, undef ], $y2 ] );
-@dsets = normalize_dsets( { %attr }, @udsets );
-$exp = [ { data => $x1, errn => $xn }, { data => $y2, } ];
-ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 3" );
+{
+	my @udsets = ( [ [ $x1, $xn, undef ], $y2 ] );
+	my @dsets = normalize_dsets( { %attr }, @udsets );
+	my $exp = [ { data => $x1, errn => $xn }, { data => $y2, } ];
+	ok( _eq_array( $dsets[0]{Vectors}, $exp), "array: asymmetric errors 3" );
+}
 
 ############################################
 
 sub __deep_check {
     my($e1, $e2) = @_;
+    my @Data_Stack;
     my $ok = 0;
 
     my $eq;
@@ -294,7 +327,9 @@ sub __deep_check {
 sub _eq_array  {
     my($a1, $a2) = @_;
     return 1 if $a1 eq $a2;
+    my @Data_Stack;
 
+    my $DNE;
     my $ok = 1;
     my $max = $#$a1 > $#$a2 ? $#$a1 : $#$a2;
     for (0..$max) {
@@ -315,7 +350,9 @@ sub _eq_array  {
 sub _eq_hash {
     my($a1, $a2) = @_;
     return 1 if $a1 eq $a2;
+    my @Data_Stack;
 
+    my $DNE;
     my $ok = 1;
     my $bigger = keys %$a1 > keys %$a2 ? $a1 : $a2;
     foreach my $k (keys %$bigger) {
