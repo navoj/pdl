@@ -12,8 +12,8 @@ use warnings;
 use Test::More;
 
 sub tapprox {
-	my($a,$b,$mdiff) = @_;
-	all approx($a, $b,$mdiff || 0.01);
+	my($pa,$pb,$mdiff) = @_;
+	all approx($pa, $pb,$mdiff || 0.01);
 }
 
 sub rpic_unlink {
