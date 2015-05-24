@@ -5,15 +5,7 @@ use Test::More;
 use PDL::LiteF;
 use Benchmark ':hireswallclock';
 
-kill INT,$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
-
-sub tapprox {
-       my($a,$b,$mdiff) = @_;
-       $mdiff = 0.01 unless defined($mdiff);
-       my $c = abs($a-$b);
-       my $d = max($c);
-       $d < $mdiff;
-}
+kill 'INT',$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
 
 plan skip_all => 'No threads' if !PDL::Core::pthreads_enabled;
 plan tests => 26;
@@ -35,7 +27,7 @@ set_autopthread_targ(0);
 timethese(20,{unthreaded => '$b **= 1.3'});
 
 print $a->slice('0:20'),"\n";
-ok(tapprox($a,$b));
+ok(all approx($a,$b));
 
 # Another Test Case
 $a = sequence(3,10);
@@ -45,7 +37,7 @@ $c = inner $a, $b;
 print $c,"\n";
 $cc = $a->sumover;
 print $cc,"\n";
-ok(tapprox($c,$cc));
+ok(all approx($c,$cc));
 
 # Try multi-dim cases
 set_autopthread_targ(2);
@@ -54,7 +46,7 @@ $b = zeroes(200000,2,2);
 $a+=1;
 set_autopthread_targ(0); # Turn off pthreading for $b adding
 $b+=1; 
-ok( tapprox($a, $b));
+ok( all approx($a, $b));
 
 ### Multi-dimensional incrementing case ###
 ##  This is performed multiple times to be sure that indexing isn't
@@ -85,8 +77,8 @@ $in .= 1;
 
 # Check for writeback to the parent PDL working (should have three ones in the array)
 my $lutExSum = $lutEx->sum;
-ok( tapprox($lutExSum, pdl(3)) );
+ok( all approx($lutExSum, pdl(3)) );
 
 # Check for inplace assignment working. $in should be all ones
 my $inSum = $in->sum;
-ok( tapprox($inSum, pdl(2) ) );
+ok( all approx($inSum, pdl(2) ) );
