@@ -7,11 +7,6 @@ use warnings;
 
 kill 'INT',$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
 
-sub tapprox {
-	my($pa,$pb,$mdiff) = @_;
-	all approx($pa, $pb,$mdiff || 0.01);
-}
-
 plan skip_all => 'No threads' if !PDL::Core::pthreads_enabled;
 plan tests => 27;
 
@@ -25,7 +20,7 @@ $pa->add_threading_magic(0,10);
 
 timethese(50,{threaded => '$pa += 1', unthreaded => '$pb+= 1'});
 print $pa->slice('0:20'),"\n";
-ok(tapprox($pa,$pb));
+ok(all approx($pa,$pb));
 }
 
 {
@@ -37,7 +32,7 @@ print $pc,"\n";
 $pa->remove_threading_magic;
 my $cc = $pa->sumover;
 print $cc,"\n";
-ok(tapprox($pc,$cc));
+ok(all approx($pc,$cc));
 }
 
 {
@@ -47,7 +42,7 @@ my $pb = zeroes(200000,2,2);
 $pa->add_threading_magic(0,2);
 $pa+=1;
 $pb+=1;
-ok( tapprox($pa, $pb));
+ok( all approx($pa, $pb));
 }
 
 ### Multi-dimensional incrementing case ###
@@ -86,11 +81,11 @@ $in .= 1;
 
 # Check for writeback to the parent PDL working (should have three ones in the array)
 my $lutExSum = $lutEx->sum;
-ok( tapprox($lutExSum, pdl(3)) );
+ok( all approx($lutExSum, pdl(3)) );
 
 # Check for inplace assignment working. $in should be all ones
 my $inSum = $in->sum;
-ok( tapprox($inSum, pdl(2) ) );
+ok( all approx($inSum, pdl(2) ) );
 }
 
 {
@@ -123,9 +118,9 @@ $in .= 1;
 # Check for writeback to the parent PDL working (should have three ones in the array)
 #print $lutEx;
 my $lutExSum = $lutEx->sum;
-ok( tapprox($lutExSum, pdl(5)) );
+ok( all approx($lutExSum, pdl(5)) );
 
 # Check for inplace assignment working. $in should be all ones
 my $inSum = $in->sum;
-ok( tapprox($inSum, pdl(2) ) );
+ok( all approx($inSum, pdl(2) ) );
 }
