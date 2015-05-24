@@ -1,24 +1,18 @@
 use PDL;
 
-use Test::More tests => 21;
+use Test::More;
 use Test::Exception;
 
 use strict;
 use warnings;
 
-my $got = 0;
-eval{require PDL::Slatec;};
-if(!$@) {$got = 1}
+eval {
+	require PDL::Slatec;
+	require PDL::Graphics::Limits;
+	1;
+} or plan skip_all => 'could not load modules';
 
-if($got) {
-  eval{require PDL::Graphics::Limits;};
-  if($@) {$got = 0}
-  }
-
-unless($got) {
-  for(1..21){print "ok $_ - skipped\n"}
-  exit;
-  }
+plan tests => 21;
 
 *normalize_dsets = \&PDL::Graphics::Limits::normalize_dsets;
 *parse_vecspecs = \&PDL::Graphics::Limits::parse_vecspecs;
