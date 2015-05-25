@@ -1,7 +1,10 @@
 use strict;
+use warnings;
+
 use English;
 
-use Test;
+use Test::More;
+use Test::Exception;
 
 use PDL::LiteF;
 use PDL::Lvalue;
@@ -10,9 +13,7 @@ BEGIN {
     if ( PDL::Lvalue->subs and !$PERLDB) {
 	plan tests => 3;
     } else {
-	plan tests => 1;
-	print "ok 1 # Skipped: no lvalue sub support\n";
-	exit;
+	plan skip_all => "no lvalue sub support";
     }
 } 
 
@@ -20,9 +21,9 @@ $| = 1;
 
 ok (PDL::Lvalue->subs('slice'));
 
-$a = sequence 10;
-eval '$a->slice("") .= 0';
+my $pa = sequence 10;
+lives_ok {
+	$pa->slice("") .= 0;
+};
 
-ok (!$@);
-
-ok ($a->max, 0);
+is($pa->max, 0);
