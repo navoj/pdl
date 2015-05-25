@@ -19,10 +19,8 @@ use File::Spec;
 kill 'INT',$$ if $ENV{UNDER_DEBUGGER}; # Useful for debugging.
 
 sub tapprox {
-        my($a,$b) = @_;
-        my $c = abs($a-$b);
-        my $d = max($c);
-        $d < 0.01;
+        my($pa,$pb) = @_;
+	all approx($pa, $pb, 0.01);
 }
 
 # Create the filenames
