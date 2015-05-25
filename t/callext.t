@@ -69,8 +69,8 @@ sub loglog {
 
    my $ret = $x->copy; # Make copy of $x to return
 
-   print "X = $x\n";
-   print "Y = $y\n";
+   note "X = $x\n";
+   note "Y = $y\n";
 
    my $ldfile =
    callext($out, "loglog_ext", $ret, $y);
