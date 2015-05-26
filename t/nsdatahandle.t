@@ -12,7 +12,7 @@ $| = 1;
 use PDL::NiceSlice;
 
 my $data = join '', <DATA>;
-ok $data =~ "we've got data";
+like $data, qr/we've got data/;
 
 __DATA__
 
