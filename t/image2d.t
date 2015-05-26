@@ -30,7 +30,7 @@ ok all approx( $pc, $ans );  # 1
 
 {
 # conv2d
-my $pa = zeroes(3,3); 
+my $pa = zeroes(3,3);
 $pa->set(1,1,1);
 my $pb = sequence(3,3);
 ok all approx( conv2d($pa,$pb), $pb );    # 2
@@ -38,7 +38,7 @@ ok all approx( conv2d($pa,$pb), $pb );    # 2
 
 {
 # conv2d: boundary => reflect
-my $pa = ones(3,3);  
+my $pa = ones(3,3);
 my $pb = sequence(3,3);
 {
 my $ans = pdl ([12,18,24],[30,36,42],[48,54,60]);
@@ -93,10 +93,10 @@ my $mask = zeroes(5,5);
 $mask->set(2,2,1);
 ok all approx( patch2d($pa,$mask), $pa );  # 6
 
-# note: 
+# note:
 #   with no bad values, any bad pixel which has no good neighbours
 #   has its value copied
-# 
+#
 my $m = $mask->slice('1:3,1:3');
 $m .= 1;
 my $ans = $pa->copy;
@@ -104,7 +104,9 @@ note $pa, $mask, patch2d($pa,$mask);
 ok all approx( patch2d($pa,$mask), $ans );  # 7
 }
 
-if ( $PDL::Bad::Status ) {
+SKIP: {
+    skip "PDL::Bad support not available.", 5 unless $PDL::Bad::Status;
+
     my $pa = ones(5,5);
     # patchbad2d: bad data
     my $m = $pa->slice('1:3,1:3');
@@ -136,9 +138,6 @@ if ( $PDL::Bad::Status ) {
     @ans = $pa->centroid2d( 10, 10, 20 );
     ok all approx( $ans[0], 8.432946  );  # numbers should be same as when set < 9 to 0
     ok all approx( $ans[1], 11.756724 );
-
-} else { 
-    skip "PDL::Bad support not available.", 5;
 }
 
 {
