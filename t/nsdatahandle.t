@@ -1,11 +1,11 @@
 use strict;
-use Test;
-
+use Test::More tests => 1;
 
 # check if PDL::NiceSlice clobbers the DATA filehandle
 use PDL::LiteF;
 
-plan tests => 1;
+use strict;
+use warnings;
 
 $| = 1;
 
